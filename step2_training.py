@@ -6,8 +6,8 @@ from ultralytics import YOLO
 # ===================== CONFIG =====================
 CFG = {
     # --- ścieżki (domyślne) ---
-    "root_data": str(Path(__file__).parents[1] / "_outputs/_figury/step1_generate_data"),
-    "run_root":  str(Path(__file__).parents[1] / "_outputs/_figury/step2_training"),
+    "root_data": str(Path(__file__).parents[0] / "_outputs/_figury/step1_generate_data"),
+    "run_root":  str(Path(__file__).parents[0] / "_outputs/_figury/step2_training"),
 
     # --- model ---
     "model_name": "yolov8n.pt",

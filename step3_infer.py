@@ -73,9 +73,9 @@ def predict_one(model: YOLO, img_path: Path, out_path: Path):
     print(f"Saved: {out_path}")
 
 # Domyślne ścieżki (wykminione z poprzedniego skryptu)
-DEFAULT_IMG = str(Path(__file__).parents[1] / "_inputs/PXL_20250925_050125594.jpg")
-DEFAULT_OUT_DIR = str(Path(__file__).parents[1] / "_outputs/_figury/step3_infer")
-DEFAULT_WEIGHTS = str(Path(__file__).parents[1] / "_outputs/_figury/step2_training/runs/shapes_yolo_n/weights/last.pt")
+DEFAULT_IMG = str(Path(__file__).parents[0] / "_inputs/PXL_20250925_050125594.jpg")
+DEFAULT_OUT_DIR = str(Path(__file__).parents[0] / "_outputs/_figury/step3_infer")
+DEFAULT_WEIGHTS = str(Path(__file__).parents[0] / "_outputs/_figury/step2_training/runs/shapes_yolo_n/weights/last.pt")
 
 def parse_args():
     ap = argparse.ArgumentParser(description="Batch->Single: predykcja YOLO na jednym obrazie z własnymi wagami.")
