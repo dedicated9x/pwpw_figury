@@ -1,9 +1,13 @@
-# predict_one_img.py
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+# predict_batch.py — YOLO inference dla wszystkich plików bezpośrednio w _inputs (bez rekurencji)
+
 from pathlib import Path
 import argparse
 import cv2 as cv
 import numpy as np
 from ultralytics import YOLO
+from tqdm import tqdm
 
 # -------- CFG (stałe, nie-ścieżkowe) --------
 CFG = {
@@ -17,8 +21,6 @@ CFG = {
     "class_names": ["square", "circle", "triangle"],
 }
 # --------------------------------------------
-
-
 
 def shrink_box(x1, y1, x2, y2, shrink, W, H):
     cx = (x1 + x2) / 2.0; cy = (y1 + y2) / 2.0
@@ -34,6 +36,7 @@ def draw_alpha_box(img, pt1, pt2, color_bgr, alpha=0.18, thickness=2):
     cv.rectangle(img, pt1, pt2, color_bgr, thickness, cv.LINE_AA)
 
 def predict_one(model: YOLO, img_path: Path, out_path: Path):
+    # infer
     res = model.predict(
         source=str(img_path),
         imgsz=CFG["imgsz"],
@@ -70,19 +73,23 @@ def predict_one(model: YOLO, img_path: Path, out_path: Path):
     out_path.parent.mkdir(parents=True, exist_ok=True)
     if not cv.imwrite(str(out_path), img):
         raise RuntimeError(f"Nie zapisano: {out_path}")
-    print(f"Saved: {out_path}")
 
-# Domyślne ścieżki (wykminione z poprzedniego skryptu)
-DEFAULT_IMG = str(Path(__file__).parents[0] / "_inputs/PXL_20250925_050125594.jpg")
-DEFAULT_OUT_DIR = str(Path(__file__).parents[0] / "_outputs/_figury/step3_infer")
-DEFAULT_WEIGHTS = str(Path(__file__).parents[0] / "_outputs/_figury/step2_training/runs/shapes_yolo_n/weights/last.pt")
+# Domyślne ścieżki
+BASE_DIR = Path(__file__).parents[0]
+DEFAULT_INPUTS_DIR = BASE_DIR / "_inputs"
+DEFAULT_OUT_DIR    = BASE_DIR / "_outputs/_figury/step3_infer"
+DEFAULT_WEIGHTS    = BASE_DIR / "_outputs/_figury/step2_training/runs/shapes_yolo_n/weights/last.pt"
+
+def list_input_files(inputs_dir: Path):
+    exts = {".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff", ".webp"}
+    return sorted([p for p in inputs_dir.iterdir() if p.is_file() and p.suffix.lower() in exts])
 
 def parse_args():
-    ap = argparse.ArgumentParser(description="Batch->Single: predykcja YOLO na jednym obrazie z własnymi wagami.")
-    ap.add_argument("--input-img", type=Path, default=DEFAULT_IMG,
-                    help="Ścieżka do wejściowego obrazu.")
-    ap.add_argument("--output-dir", type=Path, default=DEFAULT_OUT_DIR,
-                    help="Katalog wyjściowy (plik będzie miał sufiks _pred.jpg).")
+    ap = argparse.ArgumentParser(description="Batch YOLO inference dla wszystkich plików bezpośrednio w katalogu.")
+    ap.add_argument("--inputs-dir", type=Path, default=DEFAULT_INPUTS_DIR,
+                    help="Katalog wejściowy (bez rekurencji).")
+    ap.add_argument("--out-dir", type=Path, default=DEFAULT_OUT_DIR,
+                    help="Katalog wyjściowy.")
     ap.add_argument("--weights", type=Path, default=DEFAULT_WEIGHTS,
                     help="Ścieżka do pliku wag last.pt.")
     return ap.parse_args()
@@ -92,13 +99,27 @@ def main():
 
     if not args.weights.exists():
         raise FileNotFoundError(f"Brak pliku wag: {args.weights}")
-    if not args.input_img.exists():
-        raise FileNotFoundError(f"Brak wejściowego obrazu: {args.input_img}")
+    if not args.inputs_dir.exists():
+        raise FileNotFoundError(f"Brak katalogu wejściowego: {args.inputs_dir}")
 
+    files = list_input_files(args.inputs_dir)
+    if not files:
+        print(f"Brak obrazów do przetworzenia w: {args.inputs_dir}")
+        return
+
+    args.out_dir.mkdir(parents=True, exist_ok=True)
     model = YOLO(str(args.weights))
 
-    out_path = args.output_dir / (args.input_img.stem + "_pred.jpg")
-    predict_one(model, args.input_img, out_path)
+    ok = 0
+    for img_path in tqdm(files, desc="YOLO infer", unit="img"):
+        try:
+            out_path = args.out_dir / f"{img_path.stem}_pred.jpg"
+            predict_one(model, img_path, out_path)
+            ok += 1
+        except Exception as e:
+            print(f"[ERR] {img_path.name}: {e}")
+
+    print(f"\n[SUMMARY] OK: {ok}/{len(files)} | OUT: {args.out_dir}")
 
 if __name__ == "__main__":
     main()

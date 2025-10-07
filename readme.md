@@ -24,6 +24,6 @@ Wreszcie, inferencję uruchamiamy skryptem
 python step3_infer.py
 ```
 
-Domyślnie jako obraz wejściowy brany jest obrazek _inputs/PXL_20250925_050125594.jpg, zaś 
- wizualizacja zapisywana jest w _outputs/_figury/step3_infer. 
+Domyślnie jako obrazy wejściowe brane są obrazy z katalogu _inputs/, zaś 
+wizualizacje zapisywane są w _outputs/_figury/step3_infer/. 
 Można to zmienić za pomocą parametrów skryptu. 
